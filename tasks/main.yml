@@ -1,5 +1,6 @@
 ---
 # tasks file for mopidy
+
 - name: "Add the mopidy apt gpg key"
   apt_key:
     url  : "https://apt.mopidy.com/mopidy.gpg"
@@ -25,6 +26,11 @@
     name   : "{{ mopidy_packages }}"
     state  : "{{ mopidy_state }}"
   register: mopidy_installation_status
+
+- name: "Update the apt repository cache when OS is Debian"
+  apt:
+    cache_valid_time: 3600 
+    update_cache: yes
 
 ## Debugging
 

@@ -2,8 +2,20 @@
 # defaults file for mopidy
 
 mopidy_debug: "true"
-mopidy_state: "present"
+mopidy_state: "present" # present, absent, latest
+mupity_service: 'true'
 mopidy_packages:
   - mopidy
-                  
+mopidy_service_config_file: '/etc/mopidy/mopidy.conf'
+mopidy_service_user: 'mopidy'
+
+mopity_service_config_command: 'sudo mopidyctl config'
+mopity_service__music_scan: 'sudo mopidyctl local scan'
+mopity_service_enable: 'sudo dpkg-reconfigure mopidy'
+# systemd
+mopity_service_enable: 'sudo systemctl enable mopidy'
+mopity_service_enable_output: "Synchronizing state of mopidy.service with SysV init with /lib/systemd/systemd-sysv-install...
+Executing /lib/systemd/systemd-sysv-install enable mopidy
+insserv: warning: current start runlevel(s) (empty) of script `mopidy' overrides LSB defaults (2 3 4 5).
+insserv: warning: current stop runlevel(s) (0 1 2 3 4 5 6) of script `mopidy' overrides LSB defaults (0 1 6)."
 
