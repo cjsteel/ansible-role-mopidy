@@ -1,0 +1,9 @@
+---
+# defaults file for mopidy
+
+mopidy_debug: "true"
+mopidy_state: "present"
+mopidy_packages:
+  - mopidy
+                  
+

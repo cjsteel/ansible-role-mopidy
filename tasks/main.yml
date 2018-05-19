@@ -1,0 +1,37 @@
+---
+# tasks file for mopidy
+- name: "Add the mopidy apt gpg key"
+  apt_key:
+    url  : "https://apt.mopidy.com/mopidy.gpg"
+    state: "{{ mopidy_state }}"
+  when: mopidy_state == "present" or mopidy_state == "reinstalled"
+
+#- name: "Add the mopidy repository to sources"
+#  apt_repository:
+#    repo : "https://apt.mopidy.com/stretch.list"
+#    state: "{{ mopidy_state }}"
+#    mode : "0644"
+#  when: mopidy_state == "present" or mopidy_state == "reinstalled"
+
+- name: "Download the mopidy strech source list to /etc/apt/sources.d/mopidy.list"
+  get_url:
+    url: 'https://apt.mopidy.com/stretch.list'
+    dest: '/etc/apt/sources.list.d/mopidy.list'
+    mode: 0644
+  when: mopidy_state == "present" or mopidy_state == "reinstalled"
+
+- name: "install mopidy_packages"
+  package:
+    name   : "{{ mopidy_packages }}"
+    state  : "{{ mopidy_state }}"
+  register: mopidy_installation_status
+
+## Debugging
+
+- name: "DEBUG - value of mopidy_installation_status"
+  debug: var=mopidy_installation_status
+  when: mopidy_debug
+
+- name: "DEBUG - value of mopidy_installation_status.failed"
+  debug: var=mopidy_installation_status.failed
+  when: mopidy_debug
