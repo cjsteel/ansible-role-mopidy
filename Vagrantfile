@@ -21,8 +21,8 @@
   #  },
     {
       :name => "ubuntu-1604",
-#      :box => "ubuntu/xenial64",
-      :box => "xenial64dt",
+      :box => "xenial64",
+#      :box => "xenial64dt",
 #      :version => "20171221.0.0",
       :ip => '10.0.0.13',
       :cpu => "50",
@@ -55,6 +55,8 @@
     boxes.each do |box|
 # set name vagrant outputs on the console
       config.vm.define box[:name] do |vms|
+      config.vm.network "forwarded_port", guest: 6600, host: 7700
+      config.vm.network "forwarded_port", guest: 6680, host: 7780
         vms.vm.box = box[:box]
 #        vms.vm.box_version = box[:version]
         #Now we set the hostname "in" the VM
@@ -64,15 +66,16 @@
           #Now we set the VirtualBox GUI Name define using vbox.name
           vbox.name = "#{role_short_name}-#{box[:name]}"
           vbox.customize ["modifyvm", :id, "--cpuexecutioncap", box[:cpu]]
+          vbox.customize ["modifyvm", :id, "--audiocontroller", "hda"]
           vbox.customize ["modifyvm", :id, "--memory", box[:ram]]
         end
         vms.vm.network :private_network, ip: box[:ip]
         vms.vm.provision "shell",
           inline: "echo 'We have lift off'"
-        vms.vm.provision :ansible do |ansible|
-          ansible.playbook = "tests/vagrant.yml"
-          ansible.verbose = "vv"
-        end
+#        vms.vm.provision :ansible do |ansible|
+#          ansible.playbook = "tests/vagrant.yml"
+#          ansible.verbose = "vv"
+#        end
       end
     end
   end

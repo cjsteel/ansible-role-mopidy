@@ -27,14 +27,34 @@ mopidy -o media_dir=/var/lib/mopidy/media
 
 ```
 
-
-
 ## Mopidy Installation
+
+### Ensure Guest Editions installed
+
+## Ensure for gstreamer
+
+Then you’ll need to install GStreamer >= 1.2.3, with Python bindings. GStreamer is packaged for most popular Linux distributions. Search for GStreamer in your package manager, and make sure to install the Python bindings, and the “good” and “ugly” plugin sets.
+
+If you use Debian/Ubuntu you can install GStreamer like this:
+
+```
+sudo apt-get install python-gst-1.0 \
+    gir1.2-gstreamer-1.0 gir1.2-gst-plugins-base-1.0 \
+    gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly \
+    gstreamer1.0-tools
+```
+
+###Test Sound
+
+```shell
+sudo ps -ef | grep pulse
+aplay /usr/share/sounds/alsa/Front_Center.wav
+```
 
 ### Add the archive’s GPG key:
 
 ```shell
-wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add -
+wget -q -O https://apt.mopidy.com/mopidy.gpg | sudo apt-key add -
 ```
 
 ### Add the APT repo to your package sources:
@@ -43,17 +63,84 @@ wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add -
 sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/stretch.list
 ```
 
-### Install Mopidy and all dependencies:
+### Install Mopidy:
+
+### Using pip
+
+```shell
+sudo pip install --upgrade mopidy
+```
+
+* [docs/pip-install-mopidy-as-user-mopity-output.md](docs/pip-install-mopidy-as-user-mopity-output.md)
+
+#### Using apt
 
 ```shell
 sudo apt-get update
 sudo apt-get install mopidy
 # Install the Debian packaged spotify extension
-sudo apt-get install mopidy-spotify
+#sudo apt-get install mopidy-spotify
 # Install the Debian packaged local extension sqlite back end
 #sudo apt-get install mopidy-local-sqlite
 # Install the Debian packaged youtube extension
 #sudo apt-get install mopidy-youtube
+```
+
+## Available extensions
+
+### via apt
+
+```shell
+apt-cache search mopidy
+```
+
+apt installable extensions
+
+* [docs/apt-installable-mopedy-extentions.md](docs/apt-installable-mopedy-extentions.md)
+
+```shell
+mopidy                 # music server with support for MPD/HTTP clients
+mopidy-dleyna          # Mopidy extension for playing music from Digital Media Servers
+mopidy-doc             # music server with support for MPD/HTTP clients documentation
+mopidy-internetarchive # Mopidy extension for playing music from the Internet Archive
+mopidy-local-sqlite    # Mopidy extension for keeping your local library in SQLite
+mopidy-youtube         # Mopidy extension for playing music from YouTube
+mopidy-spotify         # Mopidy extension for playing music from Spotify
+mopidy-spotify-tunigo  # Mopidy extension for providing the browse feature of Spotify
+```
+
+### via pip
+
+ensure for and upgrade pip
+
+```shell
+sudo apt install -y python-pip
+```
+
+Upgrade pip but only if you know what you are doing...
+
+```shell
+#pip install --upgrade pip
+```
+
+
+
+```shell
+pip search mopidy
+```
+
+pip installable mopidy stuff:
+
+* [docs/pip-installable-mopedy-applications.md](docs/pip-installable-mopedy-applications.md)
+
+items of interest:
+
+```shell
+Mopidy-Local-SQLite   # (1.0.0) Mopidy SQLite local library extension
+Mopidy-Moped          # (0.7.1) Responsive Web client for MopidyMopidy-Mobile
+Mopidy-Mobile         # (1.8.3) Mopidy Web client extension for mobile devices
+MopidyCLI             # (0.2.0) Mopidy tool controlling playback from command line
+Mopidy-Youtube        # (2.0.2) Mopidy extension that plays sound from YouTube
 ```
 
 ### Install unrar 
@@ -79,7 +166,6 @@ https://github.com/martijnboland/moped
 ```shell
 sudo apt-get install python-pip
 sudo pip install Mopidy-Moped
-sudo pip install --upgrade pip
 ```
 
 ### Local Images
@@ -104,12 +190,6 @@ pip
 
 ```shell
 sudo pip install Mopidy-Local-SQLite
-```
-
-Configure
-
-```shell
-mopidy -o local/library=sqlite
 ```
 
 Confirm with
@@ -145,12 +225,20 @@ cd "$HOME/Music/1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106)"
 wget http://www.ousterhout.net/lossless/gd/1966-11-19,%20Fillmore%20Auditorium,%20San%20Francisco%20CA,%20SBD%20%2894106%29.rar
 ```
 
-* un archive our free music
+* unarchive our free music
+* Ensure for unrar
 
 ```shell
-unrar x 1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\).rar
+sudo apt install -y unrar
+```
+
+Unarchive our rar file
+
+```shell
+unrar x "1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106).rar"
+#unrar x 1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\).rar
 # if you want to delete the rar package then...
-rm *1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\).rar
+rm "1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106).rar"
 ls -al
 ```
 
@@ -158,7 +246,10 @@ Ensure the Mopidy user service media directory is configured for our new local m
 
 Edit `nano ~/.config/user-dirs.dirs` and the option for your local media (Music) directory:
 
+
+
 ```shell
+cp ~/.config/user-dirs.dirs ~/.config/user-dirs.dirs_original
 nano ~/.config/user-dirs.dirs
 ```
 
@@ -182,11 +273,48 @@ XDG_PICTURES_DIR="$HOME/Pictures"
 XDG_VIDEOS_DIR="$HOME/Videos"
 ```
 
-The manual says the follwoign should work but it does not!
+#### Scanning the local media collection
+
+Next we scan the local media 
 
 ```shell
-# this does not work
-#mopidy -o local/media_dir=~/Music_new
+mopidy local scan
+```
+
+## Start mopedy
+
+### Kill any unknown instances of Mopidy
+
+Check for other (pip installed) mopedy instances
+
+```shell
+sudo ps -ef | grep mopidy
+```
+
+output example:
+
+```shell
+vagrant  15206 15189  0 17:15 pts/19   00:00:02 /usr/bin/python /usr/local/bin/mopidy
+vagrant  15776 15189  0 17:36 pts/19   00:00:00 grep --color=auto mopidy
+```
+
+kill them
+
+```shell
+kill 15206
+```
+
+output example:
+
+```shell
+[1]+  Terminated              mopidy
+```
+
+start mopedy with some test variable values
+
+```shell
+# start mopidy with this option
+mopidy -o local/media_dir=$HOME/Music -o local/library=sqlite
 ```
 
 #### The `mopidy Command`
@@ -199,15 +327,7 @@ mopidy config
 
 Command output example: [output/output-mopidyctl-config-run-001.md](output/output-mopidyctl-config-run-001.md)
 
-#### Scanning the local media collection
-
-Next we scan the local media 
-
-```shell
-mopidy local scan
-```
-
-### restart the opidy service
+### restart the Mopidy service
 
 ```shell
 service mopidy status
@@ -237,7 +357,49 @@ mpc add spotify:track:1QXzQKmQiDOzGHwSXVdHTp
 mpc play
 ```
 
+# Results
 
+Woking configuration but:
+
+* Sound is very choppy
+* sqlite not being used
+* Portworwarding set up but not function as expected
+
+Possible solutions
+
+* VM had reverted to PC97 sound controller, changed back to hda and:
+
+  ```shell
+  sudo apt install pulseaudio pulseaudio-utils gstreamer0.10-pulseaudio
+  # sudo apt install gstreamer1.0 libsdl1.2debiansu
+  ```
+
+  
+
+  ```shell
+  sudo pip install Mopidy-PulseAudio
+  ```
+
+  
+
+  ```shell
+  
+  Collecting Mopidy-PulseAudio
+    Could not find a version that satisfies the requirement Mopidy-PulseAudio (from versions: )
+  No matching distribution found for Mopidy-PulseAudio
+  
+  ```
+
+  tried
+
+  ```shell
+  apt-get update && apt-get install -y \
+  mopidy mopidy-spotify mopidy-spotify-tunigo
+  ```
+
+  
+
+* change hostname designation to allow access from other hosts
 
 ## Additional Debian packaged extensions
 
@@ -252,25 +414,25 @@ apt-cache search mopidy
 Output from Ubuntu 16.04:
 
 ```shell
-mopidy - music server with support for MPD/HTTP clients
-mopidy-alsamixer - Mopidy extension for extension for ALSA volume control
-mopidy-beets - Mopidy extension for playing music from Beets' web plugin
-mopidy-dirble - Mopidy extension for browsing Dirble's radio station directory
-mopidy-dleyna - Mopidy extension for playing music from Digital Media Servers
-mopidy-doc - music server with support for MPD/HTTP clients - documentation
-mopidy-internetarchive - Mopidy extension for playing music from the Internet Archive
-mopidy-local-sqlite - Mopidy extension for keeping your local library in SQLite
-mopidy-mpris - Mopidy extension for controlling playback through MPRIS
-mopidy-podcast - Mopidy extension for searching and browsing podcasts
-mopidy-podcast-gpodder - Mopidy extension for searching and browsing gpodder.net podcasts
-mopidy-podcast-itunes - Mopidy extension for searching and browsing iTunes podcasts
-mopidy-scrobbler - Mopidy extension for scrobbling music to Last.fm
-mopidy-somafm - Mopidy extension for playing music from SomaFM
-mopidy-soundcloud - Mopidy extension for playing music from SoundCloud
-mopidy-tunein - Mopidy extension for playing music from TuneIn
-mopidy-youtube - Mopidy extension for playing music from YouTube
-mopidy-spotify - Mopidy extension for playing music from Spotify
-mopidy-spotify-tunigo - Mopidy extension for providing the browse feature of Spotify
+mopidy music server with support for MPD/HTTP clients
+mopidy-alsamixer Mopidy extension for extension for ALSA volume control
+mopidy-beets Mopidy extension for playing music from Beets' web plugin
+mopidy-dirble Mopidy extension for browsing Dirble's radio station directory
+mopidy-dleyna Mopidy extension for playing music from Digital Media Servers
+mopidy-doc music server with support for MPD/HTTP clients documentation
+mopidy-internetarchive Mopidy extension for playing music from the Internet Archive
+mopidy-local-sqlite Mopidy extension for keeping your local library in SQLite
+mopidy-mpris Mopidy extension for controlling playback through MPRIS
+mopidy-podcast Mopidy extension for searching and browsing podcasts
+mopidy-podcast-gpodder Mopidy extension for searching and browsing gpodder.net podcasts
+mopidy-podcast-itunes Mopidy extension for searching and browsing iTunes podcasts
+mopidy-scrobbler Mopidy extension for scrobbling music to Last.fm
+mopidy-somafm Mopidy extension for playing music from SomaFM
+mopidy-soundcloud Mopidy extension for playing music from SoundCloud
+mopidy-tunein Mopidy extension for playing music from TuneIn
+mopidy-youtube Mopidy extension for playing music from YouTube
+mopidy-spotify Mopidy extension for playing music from Spotify
+mopidy-spotify-tunigo Mopidy extension for providing the browse feature of Spotify
 ```
 
 #### Mopidy user
