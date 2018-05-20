@@ -1,34 +1,12 @@
-# mopity-server-initial-configuration.md
 
-## Description
 
-Rough translation of instructions into a recipe for manually installing and configuring a Mopity server.
-
-## Overview
-
-* Install
-  * mopedy as a system service or user service
-    * install
-    * ensure for local testing music library
-    * generate a local library
-      * configure local media directory
-      * scan local library
-        * default json lib OR local SQLite extenion
+## mopity-user-service-initial-configuration.md
 
 ## Resources
 
 - [Installing Mopity](https://docs.mopidy.com/en/latest/installation/debian/)
-- [Running as a service](https://docs.mopidy.com/en/latest/service/#service)
 
-```shell
-FILES
-       /etc/mopidy/mopidy.conf
-              System wide Mopidy configuration file.
 
-       ~/.config/mopidy/mopidy.conf
-              Your personal Mopidy configuration file. Overrides  any  configs
-              from the system wide configuration file.
-```
 
 ```shell
 
@@ -49,13 +27,9 @@ mopidy -o media_dir=/var/lib/mopidy/media
 
 ```
 
-```shell
-Show the current effective config. All configuration sources are merged  together  to  show the effective document. Secret values like passwords are masked out. Config  for  disabled  extensions are not included.
-```
 
 
-
-## Mopedy Installation
+## Mopidy Installation
 
 ### Add the archive’s GPG key:
 
@@ -69,77 +43,158 @@ wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add -
 sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/stretch.list
 ```
 
-### Install Mopedy and all dependencies:
+### Install Mopidy and all dependencies:
 
 ```shell
 sudo apt-get update
 sudo apt-get install mopidy
+# Install the Debian packaged spotify extension
+sudo apt-get install mopidy-spotify
+# Install the Debian packaged local extension sqlite back end
+#sudo apt-get install mopidy-local-sqlite
+# Install the Debian packaged youtube extension
+#sudo apt-get install mopidy-youtube
 ```
 
-## Mopedy-Local extension
+### Install unrar 
 
-Comes with Mopidy and is the default backend for all URIs starting with `local:`. The out of the box configuration includes a default local library storage, `json`. which works fine but requires Mopedy to be restarted to show changes available from the `json`to a local collection after scanning local media.
+unrar is required to unarchive some free music we will download from the internet and use for testing.
+
+```shell
+sudo apt install -y unrar
+```
+
+## Mopidy-Local extension
+
+Comes with Mopidy and is the default backend for all URIs starting with `local:`. The out of the box configuration includes a default local library storage, `json`. which works fine but requires Mopidy to be restarted to show changes available from the `json`to a local collection after scanning local media.
 
 and allows playing of local music is enabled by default. We are going to install the SQLight extension as well.
 
-## Testing the default configuration
+## HTTP CLients
+
+### Mopidy-Moped
+
+https://github.com/martijnboland/moped
+
+```shell
+sudo apt-get install python-pip
+sudo pip install Mopidy-Moped
+sudo pip install --upgrade pip
+```
+
+### Local Images
+
+* https://github.com/mopidy/mopidy-local-images
+
+```shell
+sudo pip install Mopidy-Local-Images
+```
+
+### mopidy-local-sqlite
+
+https://github.com/mopidy/mopidy-local-sqlite
+
+apt
+
+```shell
+sudo apt install -y mopidy-local-sqlite
+```
+
+pip
+
+```shell
+sudo pip install Mopidy-Local-SQLite
+```
+
+Configure
+
+```shell
+mopidy -o local/library=sqlite
+```
+
+Confirm with
+
+```shell
+mopity config
+```
+
+output and settings we are interested in:
+
+```sehll
+[local]
+library = sqlite
+scan_flush_threshold = 100
+```
+
+re-scan your library to populate the database:
+
+```shell
+mopidy local scan
+```
+
+## Local Media Directory
 
 ### Setup the local media directory
 
 * mount or create directory
-* populate
+* populate it with some free flac format media
 
 ```shell
-sudo su -
-cd /var/lib/mopidy/media
-```
-
-Download some free flac format media
-
-```shell
-mkdir "1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106)"
-cd 1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\)/
+mkdir -p "$HOME/Music/1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106)"
+cd "$HOME/Music/1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106)"
 wget http://www.ousterhout.net/lossless/gd/1966-11-19,%20Fillmore%20Auditorium,%20San%20Francisco%20CA,%20SBD%20%2894106%29.rar
-
 ```
 
-install unrar
-
-```shell
-apt install unrar
-```
-
-extract archive
+* un archive our free music
 
 ```shell
 unrar x 1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\).rar
-rm 1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\).rar
+# if you want to delete the rar package then...
+rm *1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\).rar
+ls -al
 ```
 
-Ensure the mopedy system service media directory is configured for local media:
+Ensure the Mopidy user service media directory is configured for our new local media:
+
+Edit `nano ~/.config/user-dirs.dirs` and the option for your local media (Music) directory:
 
 ```shell
-sudo mopidyctl -o local/media_dir=/var/lib/mopidy/media
+nano ~/.config/user-dirs.dirs
 ```
 
-Configure de local mopedy user service media directory:
+Default content example:
 
 ```shell
-mopidy -o local/media_dir=/var/lib/mopidy/media
+# This file is written by xdg-user-dirs-update
+# If you want to change or add directories, just edit the line you're
+# interested in. All local changes will be retained on the next run
+# Format is XDG_xxx_DIR="$HOME/yyy", where yyy is a shell-escaped
+# homedir-relative path, or XDG_xxx_DIR="/yyy", where /yyy is an
+# absolute path. No other format is supported.
+#
+XDG_DESKTOP_DIR="$HOME/Desktop"
+XDG_DOWNLOAD_DIR="$HOME/Downloads"
+XDG_TEMPLATES_DIR="$HOME/Templates"
+XDG_PUBLICSHARE_DIR="$HOME/Public"
+XDG_DOCUMENTS_DIR="$HOME/Documents"
+XDG_MUSIC_DIR="$HOME/Music"
+XDG_PICTURES_DIR="$HOME/Pictures"
+XDG_VIDEOS_DIR="$HOME/Videos"
 ```
 
-oob permissions
+The manual says the follwoign should work but it does not!
 
 ```shell
-drwxr-xr-x  6 mopidy        audio         4096 May 18 23:15 mopidy/
+# this does not work
+#mopidy -o local/media_dir=~/Music_new
 ```
 
-#### The `mopidyctl Command`
+#### The `mopidy Command`
 
-Before we continue lets inspect the service’s configuration and ensure that the music directory was correctly configured. The configuration of the local media directory is at the end of the output. See the command output  example for the entire output. The command to print out the current effective configuraiton is below:
+Check our configuration file(s)
 
 ```shell
-sudo mopidyctl config
+mopidy config
 ```
 
 Command output example: [output/output-mopidyctl-config-run-001.md](output/output-mopidyctl-config-run-001.md)
@@ -149,14 +204,44 @@ Command output example: [output/output-mopidyctl-config-run-001.md](output/outpu
 Next we scan the local media 
 
 ```shell
-sudo mopidyctl local scan
+mopidy local scan
 ```
 
-## Mpdedy as a Syst
+### restart the opidy service
+
+```shell
+service mopidy status
+service mopidy enable
+service mopidy stop
+service mopidy start
+```
+
+## Testing our configuration
+
+### Test your audio
+
+```shell
+gst-launch-0.10 audiotestsrc ! autoaudiosink
+```
+
+You should get a sound if everything has installed correctly
+
+### Test mopidy via mpc
+
+[mpc](http://linux.die.net/man/1/mpc) is a command line [mpd](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki) client that works with Mopidy
+
+```shell
+sudo apt install -y mpc
+mopidy &
+mpc add spotify:track:1QXzQKmQiDOzGHwSXVdHTp
+mpc play
+```
 
 
 
-## Debian packaged extensions
+## Additional Debian packaged extensions
+
+You can try Python extensions. Keep in mind that python packages do not automatically install dependencies.
 
 ### List available extensions via apt
 
@@ -188,98 +273,15 @@ mopidy-spotify - Mopidy extension for playing music from Spotify
 mopidy-spotify-tunigo - Mopidy extension for providing the browse feature of Spotify
 ```
 
-## Mopidy as a System Service
-
-#### /etc/mopidy/mopidy.conf
-
-```shell
-/etc/mopidy/mopidy.conf
-```
-#### mopedy user
+#### Mopidy user
 
 The Mopidy service runs as the **mopidy** user, which is automatically created when you install the Mopidy package. 
 
 The mopidy user will need read access to any local music you want Mopidy to play.
 
-#### The `mopidyctl Command`
 
-#### inspect the service’s configuration:
 
-```shell
-sudo mopidyctl config
-```
 
-####Scanning the local music collection
-
-```shell
-sudo mopidyctl local scan
-```
-
-##Mpdedy as a System Service
-
-We want to configure Mopidy to run as a system service that  automatically starts at boot.
-
-### Service management on Debian
-
-On Debian systems (those using systemd and those not using systemd ) enable the Mopidy service by running:
-
-```shell
-sudo dpkg-reconfigure mopidy
-```
-Output example:
-```shell
-insserv: warning: current start runlevel(s) (empty) of script `mopidy' overrides LSB defaults (2 3 4 5).
-insserv: warning: current stop runlevel(s) (0 1 2 3 4 5 6) of script `mopidy' overrides LSB defaults (0 1 6).
-```
-
-### Confirm the current status
-
-```shell
-sudo service mopidy status
-```
-
-### Other service commands
-
-On Debian systems use the `service` command to contriol the  Mopidy service:
-
-```shell
-sudo service mopidy start
-sudo service mopidy stop
-sudo service mopidy restart
-```
-
-## Service management with systemd
-
-On non Debian systems using systemd such as CentOS, you enable the Mopidy service by running:
-
-```shell
-sudo systemctl enable mopidy
-```
-
-Output example:
-
-```shell
-     "Synchronizing state of mopidy.service with SysV init with /lib/systemd/systemd-sysv-install...
-    Executing /lib/systemd/systemd-sysv-install enable mopidy
-    insserv: warning: current start runlevel(s) (empty) of script `mopidy' overrides LSB defaults (2 3 4 5).
-    insserv: warning: current stop runlevel(s) (0 1 2 3 4 5 6) of script `mopidy' overrides LSB defaults (0 1 6)."
-```
-
-### Confirm that the service is enabled and running
-
-You can check if Mopidy is currently running as a service by running:
-
-```shell
-sudo systemctl status mopidy
-```
-
-Mopidy is started, stopped, and restarted and so on, just like any other systemd cpntrolled service:
-
-```shell
-sudo systemctl start mopidy
-sudo systemctl stop mopidy
-sudo systemctl restart mopidy
-```
 
 ## Configure PulseAudio
 
