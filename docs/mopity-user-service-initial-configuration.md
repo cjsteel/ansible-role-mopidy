@@ -236,8 +236,6 @@ Unarchive our rar file
 
 ```shell
 unrar x "1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106).rar"
-#unrar x 1966-11-19\,\ Fillmore\ Auditorium\,\ San\ Francisco\ CA\,\ SBD\ \(94106\).rar
-# if you want to delete the rar package then...
 rm "1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106).rar"
 ls -al
 ```

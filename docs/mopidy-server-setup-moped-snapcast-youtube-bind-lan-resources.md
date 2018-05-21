@@ -1,8 +1,47 @@
-
+## Origin
 
 * https://wiki.ecohackerfarm.org/tutorials:it:soundsystem:server_setup#install_the_moped_web_interface_to_mopidy
 
+## References
+
+* https://github.com/skalavala/Multi-Room-Audio-Centralized-Audio-for-Home
+
 # Server setup
+
+## Initial config
+
+### ufw
+
+```shell
+ufw allow ssh
+ufw enable
+ufw status
+```
+
+### openssh-server
+
+```shell
+apt update
+apt install openssh-server
+```
+
+### update upgrade
+
+Connect from client
+
+```shell 
+sudo su -
+apt update
+apt upgrade
+```
+
+### ssh config
+
+```shell
+nano /etc/ssh/sshd_config
+```
+
+
 
  This HowTo is about setting up the audio server on Ubuntu and  RaspberryPi. The instructions are mainly for Ubuntu and notes for RPi  are added where applicable. 
 
@@ -11,7 +50,7 @@
  Avahi advertises services over network and Snapcast needs it. Run this as a sudoer. 
 
 ```shell
-ps aux | grep avahi | grep -v grep || sudo apt-get install avahi-daemon
+ps aux | grep avahi | grep -v grep || sudo apt-get install -y avahi-daemon
 ```
 
 ## 2. Install Mopidy
@@ -19,25 +58,31 @@ ps aux | grep avahi | grep -v grep || sudo apt-get install avahi-daemon
  **\*RPi:** Mopidy on RPi needs manual install for the  latest version. Dependencies may also differ (eg. GStreamer 1.0 not  0.10). These should get installed automatically from the new Mopidy  repository added to the local list. Follow these instructions: https://docs.mopidy.com/en/latest/installation/debian/#debian-install.*  
 
 ```shell
-sudo apt-get install mopidy
+sudo apt-get install -y mopidy       # causes a server to install a lot of stuff
+sudo apt-get install -y mopidy-doc
 ```
-
- You can also install `mopidy-doc` for local documentation. 
 
 ## 3. Configure Mopidy for HTTP access and Snapcast integration
 
- When Mopidy runs as a service in the default single-zone mode, the main config file is `/etc/mopidy/mopidy.conf`. To see how Mopidy sees its configuration, run: 
+ When Mopidy runs as a service in the default single-zone mode, the main config file is `/etc/mopidy/mopidy.conf`. 
+
+Backup `/etc/mopidy/mopidy.conf `
+
+```shell
+cp /etc/mopidy/mopidy.conf /etc/mopidy/mopidy.conf_orig
+```
+
+Take a look at all of Mopidy's configuration setting
 
 ```shell
 sudo mopidyctl config
 ```
 
- When writing configs, make sure the parameters go under right headings.  The headings are the square brackets. The basic config entries to be  added to `/etc/mopidy/mopidy.conf` are the following. 
+* [docs/mopidy-initial-virtual-configuration.md](docs/mopidy-initial-virtual-configuration.md)
 
 Edit /etc/mopidy/mopidy.conf
 
 ```shell
-cp /etc/mopidy/mopidy.conf /etc/mopidy/mopidy.conf_orig
 nano /etc/mopidy/mopidy.conf
 ```
 
@@ -61,13 +106,13 @@ hostname = 0.0.0.0
 
 ### c) Configure local music files location
 
-Set additional music file locations to the `media_dirs` parameter under the `[file]` heading. 
+Set additional music file locations to the `media_dirs` parameter under the `[file]` heading. More on the `file` extension here: <https://docs.mopidy.com/en/latest/ext/file/>
 
 For example: 
 
 ```powershell
 [file]
-media_dirs = /home/mopidy/Music
+media_dirs = /var/lib/mopidy/media
 show_dotfiles = false
 excluded_file_extensions =
   .jpg
@@ -80,51 +125,129 @@ and playlist location
 
 ```shell
 [m3u]
-# playlists_dir = /var/lib/mopidy/playlists
-playlists_dir = /home/mopidy/playlists
+playlists_dir = /var/lib/mopidy/playlists
 ```
 
-### D) Add some media
+### d) Add some media to test with
 
-add some music
+Ensure for unrar
 
 ```shell
-rmdir /home/mopidy
-cp -R /home/vagrant/Music/ /home/mopidy/.
-chown -R mopidy /home/mopidy
+sudo apt install -y unrar
 ```
-More on the `file` extension here: <https://docs.mopidy.com/en/latest/ext/file/>. 
-Binding LAN resources is described in a later point. 
 
-#### scan music
+populate `/var/lib/mopidy/media` it with some music
+
+```shell
+cd /var/lib/mopidy/media
+mkdir -p "music/1966-11-19- Fillmore Auditorium - San Francisco CA - SBD (94106)"
+cd "music/1966-11-19 - Fillmore Auditorium - San Francisco CA - SBD (94106)"
+wget http://www.ousterhout.net/lossless/gd/1966-11-19,%20Fillmore%20Auditorium,%20San%20Francisco%20CA,%20SBD%20%2894106%29.rar
+```
+
+unarchive your music rar file
+
+```shell
+unrar x "1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106).rar"
+```
+
+delete the rar file
+
+```shell
+rm "1966-11-19, Fillmore Auditorium, San Francisco CA, SBD (94106).rar"
+```
+
+#### Scan your local music directory
 
 ```shell
 mopidyctl local scan
 ```
 
-### Restart mopidy
+#### Restart mopidy
 
 ```shell
-sudo systemctl restart mopidy.service
+systemctl restart mopidy.service
 ```
 
-And now you should be able to access a Mopidy webpage at `localhost:6680` from the server, or at `192.168.X.X:6680` or a similar LAN address. There should also be a fifo created in `/tmp` with the name `snapfifo-livingroom` if you followed the instructions literally. 
+### Confirm the mopidy status
+
+```shell
+systemctl status mopidy.service
+```
+
+### Configure ufw to allow port 6680
+
+* https://help.ubuntu.com/community/UFW#Allow_and_Deny_.28specific_rules.29
+
+```SHELL
+ufw allow from 192.168.1.0/24 to any port 6680 proto tcp
+ufw status
+```
+
+### Grap the servers IP address
+
+```shell
+ifconfig
+```
+
+In the output example below the second line is the servers IP address. Make a not of it, we will use it in the next step:
+
+```shell
+enp0s25: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.109  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::221:9bff:fe06:b11c  prefixlen 64  scopeid 0x20<link>
+        ether 00:21:9b:06:b1:1c  txqueuelen 1000  (Ethernet)
+        RX packets 481384  bytes 635402056 (635.4 MB)
+        RX errors 0  dropped 1  overruns 0  frame 0
+        TX packets 239536  bytes 17414091 (17.4 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 20  memory 0xfdfc0000-fdfe0000  
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 430  bytes 33556 (33.5 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 430  bytes 33556 (33.5 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+## On the client system
+
+### Confirm access
+
+yYou should now be able to access the Mopidy defaut webpage In your browser by replacing 192.168.1.109 with your servers IP address:
+
+```shell
+http://192.168.1.109:6680/mopidy
+```
+
+Mopidy default homepage
+
+![imgs/mopidy-default-homepage.png](imgs/mopidy-default-homepage.png)
+
+
+
+Now you should be able to access a Mopidy webpage here  at `localhost:6680` from the server, or at `192.168.X.X:6680` or a similar LAN address. There should also be a fifo created in `/tmp` with the name `snapfifo-livingroom` if you followed the instructions literally. 
 
 To have Mopidy started as service by default at system startup, run this: 
 
 ```shell
-sudo systemctl enable mopidy.service
+systemctl enable mopidy.service
 ```
-Otherwise start and stop as needed with either 
+You can start, stop, restart and get the status of mopidy with these commands:
+
+Start
 
 ```shell
-sudo systemctl start mopidy.service
+systemctl start mopidy.service
 ```
 
- or
+Stop
 
 ```shell
-sudo systemctl stop mopidy.service
+systemctl stop mopidy.service
 ```
 
 For more Mopidy configuration details see <https://docs.mopidy.com/en/latest/config/>. 
@@ -134,34 +257,112 @@ For more Mopidy configuration details see <https://docs.mopidy.com/en/latest/con
 This is for easy web control of what's broadcast by the Mopidy server.  To install it, you probably need the Python package manager `pip`. Make sure you have it on your machine: 
 
 ```shell
-sudo apt-get install python-pip
+apt-get install -y python-pip
 ```
 
 Now install Moped itself. 
 
 ```shell
-sudo pip install Mopidy-Moped
+pip install Mopidy-Moped
 ```
 
-After a Mopidy restart, you should be able to access the Moped interface at `localhost:6680/moped` from the server and the same port and path with a proper ip from another LAN machine. 
+Restart mopidy
+
+```shell
+systemctl restart mopidy.service
+```
+
+After restarting the mopidy service you should have access the Moped interface at:
+
+```shell
+http://192.168.1.109:6680/moped
+```
+
+* Choose **Local media** on the left hand side
+* Choose the **music** directory in the main window. 
+* Choose the directory containing our music sample and you should see our sample songs.
 
 You can find Moped's page at <https://github.com/martijnboland/moped>.  
 
 ## 5. Install Snapcast server
 
+- https://github.com/badaix/snapcast
+
 Snapcast reads the music from Mopidy using the pipe in `/tmp`. Then it broadcasts it over LAN to Snapcast clients. The service is advertised automatically by Avahi (see step 1). You need to: 
 
 a) Download it from <https://github.com/badaix/snapcast/releases/tag/v0.10.0>. Choose a server package with a `.deb` extension and (`amd64`  before it for a standard laptop or PC). If you're using the graphical  interfacal, you can download it and then run it double-clicking on the  downloaded file. Or using the command line, get the file location, and  then do something like: 
 
+Take a look for newer versions here:
+
+https://github.com/badaix/snapcast/releases/
+
+thne install 
+
 ```shell
-cd &&
-wget https://github.com/badaix/snapcast/releases/download/v0.10.0/snapserver_0.10.0_amd64.deb &&
-sudo dpkg -i snapserver_0.10.0_amd64.deb 
+cd
+wget https://github.com/badaix/snapcast/releases/download/v0.10.0/snapserver_0.10.0_amd64.deb
+dpkg -i snapserver_0.10.0_amd64.deb
+```
+
+Output example from Ubuntu 18.04 server install:
+
+```shell
+2018-05-21 03:05:12 (718 KB/s) - ‘snapserver_0.10.0_amd64.deb’ saved [307754/307754]
+
+Selecting previously unselected package snapserver.
+(Reading database ... 76076 files and directories currently installed.)
+Preparing to unpack snapserver_0.10.0_amd64.deb ...
+Unpacking snapserver (0.10.0) ...
+dpkg: dependency problems prevent configuration of snapserver:
+ snapserver depends on libavahi-client3 (>= 0.6.16); however:
+  Package libavahi-client3 is not installed.
+
+dpkg: error processing package snapserver (--install):
+ dependency problems - leaving unconfigured
+Processing triggers for ureadahead (0.100.0-20) ...
+Processing triggers for systemd (237-3ubuntu10) ...
+Processing triggers for man-db (2.8.3-2) ...
+Errors were encountered while processing:
+ snapserver
+```
+
+### Install the missing dependencies (causing our errors above)
+
+```shell
+apt install -f
 ```
 
 ## 6. Configure the Snapcast server
 
-The configuration file should at in `/etc/default/snapserver`. The `SNAPSERVER_OPTS`  parameter needs to be set to integrate the Snapcast server with Mopidy.  Either add the following line to the config file, or edit the line  containing the `SNAPSERVER_OPTS` parameter to look like this: 
+### testing config
+
+```shell
+[http]
+hostname = ::     
+
+[mpd]
+hostname = ::
+```
+
+
+
+* https://github.com/badaix/snapcast
+
+The configuration file should at in `/etc/default/snapserver`. The `SNAPSERVER_OPTS`  parameter needs to be set to integrate the Snapcast server with Mopidy.
+
+Backup
+
+```shell
+cp /etc/default/snapserver /etc/default/snapserver_original
+```
+
+Open the config file for editing:
+
+```shell
+nano /etc/default/snapserver
+```
+
+Either add the following line to the config file, or edit the line  containing the `SNAPSERVER_OPTS` parameter to look like this: 
 
 ```shell
 SNAPSERVER_OPTS="-d -s pipe:///tmp/snapfifo-livingroom?name=livingroom&sampleformat=48000:16:2&codec=flac"
@@ -170,26 +371,86 @@ SNAPSERVER_OPTS="-d -s pipe:///tmp/snapfifo-livingroom?name=livingroom&samplefor
 Now reload the service with 
 
 ```shell
-sudo systemctl restart snapserver.service
+systemctl restart snapserver.service
 ```
 
-Snapserver runs as a service and by default should be starting by system  bootup. To get or change this behaviour follow the corresponding  instructions described in step 3. 
-
-## 7. Install the YouTube exetension for Mopidy
-
-This extension facilitates restreaming the audio from YouTube videos.  The package is present in Ubuntu repositories. To install it from the  command line, type 
+Confirm the status
 
 ```shell
-sudo apt-get install mopidy-youtube 
+systemctl status snapserver.service
 ```
 
-For playing Youtube GStreamer plugins are needed, in particualar this one: 
+If everything looks good make it start on boot with:
 
 ```shell
-sudo apt-get install gstreamer1.0-plugins-bad
+systemctl enable snapserver.service
+```
+
+## 7. Configure the snapclient
+
+THIS IS DONE ON A CLIENT, NOT THE SERVER!!!
+
+
+
+```shell
+cd
+wget https://github.com/badaix/snapcast/releases/download/v0.10.0/snapclient_0.10.0_amd64.deb
+dpkg -i snapclient_0.10.0_amd64.deb
+```
+
+BAckup the config
+
+```shell
+cp /etc/default/snapclient /etc/default/snapclient_original
+nano /etc/default/snapclient
+```
+
+
+
+## 8. Install the YouTube extension for Mopidy
+
+This extension facilitates restreaming the audio from YouTube videos.  The package is present in Ubuntu repositories.
+
+* https://github.com/mopidy/mopidy-youtube
+
+ To install it from the  command line, type 
+
+```shell
+apt-get install -y mopidy-youtube
+```
+
+For playing Youtube GStreamer plugins are needed.
+
+```shell
+apt-get install gstreamer1.0-plugins-bad
 ```
 
 Restart Mopidy. Now the searchbox on the Moped page should be able to  find YouTube videos. You can also paste the whole YouTube addresses as  they appear in the browser while watching videos. 
+
+```shell
+systemctl restart mopidy.service
+```
+
+Visit the moped home page again:
+
+```shell
+systemctl restart mopidy.service
+```
+
+In my case no videos showed up and running
+
+```shell
+mopidyctl config
+```
+
+showed that the youtub extension was disabled by self check.
+
+```shell
+[youtube]
+enabled = false  ; Extension disabled by self check.
+```
+
+Upgrading **pafy** as show below, resolved the issue and running `mopidyctl config` again showed the extention was enable.
 
 If resolving of URIs stops working, always try to update the pafy library first: 
 
@@ -200,7 +461,7 @@ pip install --upgrade pafy
 For YouTube stream reading problems, try installing the Python `youtube-dl` library using pip: 
 
 ```shell
-sudo pip install youtube-dl
+pip install youtube-dl
 ```
 
 ## 8. Bind Mopidy with LAN resources

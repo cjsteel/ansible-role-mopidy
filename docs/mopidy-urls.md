@@ -50,3 +50,4 @@ This HowTo is about setting up the audio server on Ubuntu and RaspberryPi. The i
 ## pulseaudio
 
 * [PerfectSetup](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/PerfectSetup/)
+
