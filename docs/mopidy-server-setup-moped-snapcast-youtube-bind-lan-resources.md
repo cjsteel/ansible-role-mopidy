@@ -6,6 +6,51 @@
 
 * https://github.com/skalavala/Multi-Room-Audio-Centralized-Audio-for-Home
 
+### Ansible
+
+* https://github.com/rhietala/raspberry-ansible
+* http://www.hietala.org/automating-raspberry-pi-setup-with-ansible.html
+* http://www.hietala.org/multi-room-audio-with-mpd-and-snapcast.html
+
+### Iris
+
+* https://github.com/jaedb/Iris/wiki/Getting-started
+
+### Mopidy
+
+* https://www.mopidy.com/
+* https://pyspotify.mopidy.com/en/latest/installation/#debian-ubuntu-install-from-apt-mopidy-com
+
+### Mopidy-Local-SQLite
+
+* https://github.com/mopidy/mopidy-local-sqlite
+
+### Mopidy-local-images
+
+* https://github.com/mopidy/mopidy-local-images
+
+### mpd
+
+* https://github.com/liamw9534/mopidy-pulseaudio
+* https://feeding.cloud.geek.nz/posts/home-music-server-with-mpd/
+
+### Pulseaudio
+
+* https://github.com/Malte-D/rpi-mopidy-pulseaudio-server/blob/master/Dockerfile
+
+### Raspberry Pi
+
+* http://www.pimusicbox.com/
+
+### Snapcast
+
+* https://github.com/badaix/snapcast
+
+### youtube
+
+* https://github.com/mopidy/mopidy-youtube
+* 
+
 # Server setup
 
 ## Initial config
@@ -175,12 +220,21 @@ systemctl restart mopidy.service
 systemctl status mopidy.service
 ```
 
-### Configure ufw to allow port 6680
+### Configure ufw to allow port 6680 for http
 
 * https://help.ubuntu.com/community/UFW#Allow_and_Deny_.28specific_rules.29
 
 ```SHELL
 ufw allow from 192.168.1.0/24 to any port 6680 proto tcp
+ufw status
+```
+
+### Configure ufw to allow port 6600 for mpt
+
+- https://help.ubuntu.com/community/UFW#Allow_and_Deny_.28specific_rules.29
+
+```shell
+ufw allow from 192.168.1.0/24 to any port 6600 proto tcp
 ufw status
 ```
 
@@ -215,7 +269,7 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 
 ## On the client system
 
-### Confirm access
+### Confirm http access
 
 yYou should now be able to access the Mopidy defaut webpage In your browser by replacing 192.168.1.109 with your servers IP address:
 
@@ -281,12 +335,49 @@ http://192.168.1.109:6680/moped
 * Choose **Local media** on the left hand side
 * Choose the **music** directory in the main window. 
 * Choose the directory containing our music sample and you should see our sample songs.
+* Don't be sad. No music will play as Mopidy is currently senting it to `tmp/snapfifo-livingroom` in preparation for the next step, setting up and configuring snapcast...
 
 You can find Moped's page at <https://github.com/martijnboland/moped>.  
 
 ## 5. Install Snapcast server
 
 - https://github.com/badaix/snapcast
+
+### ports
+
+    #   -p, --port arg (=1704)              server port 
+     --controlPort
+              Remote control port (default =1705)
+
+```shell
+FILES
+       /tmp/snapfifo
+              PCM input fifo file
+
+       /etc/default/snapserver
+              the daemon default configuration file
+
+       ~/.config/snapcast/server.json or (if $HOME is not set) /var/lib/snapcast/server.json
+              persistent server data file
+```
+
+### Configure ufw to allow port 1704 for snapcast server
+
+- https://help.ubuntu.com/community/UFW#Allow_and_Deny_.28specific_rules.29
+
+```shell
+ufw allow from 192.168.1.0/24 to any port 1704 proto tcp
+ufw status
+```
+
+### Configure ufw to allow port 1705 for remote control
+
+- https://help.ubuntu.com/community/UFW#Allow_and_Deny_.28specific_rules.29
+
+```shell
+ufw allow from 192.168.1.0/24 to any port 1705 proto tcp
+ufw status
+```
 
 Snapcast reads the music from Mopidy using the pipe in `/tmp`. Then it broadcasts it over LAN to Snapcast clients. The service is advertised automatically by Avahi (see step 1). You need to: 
 
@@ -404,8 +495,6 @@ BAckup the config
 cp /etc/default/snapclient /etc/default/snapclient_original
 nano /etc/default/snapclient
 ```
-
-
 
 ## 8. Install the YouTube extension for Mopidy
 
