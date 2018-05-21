@@ -110,152 +110,149 @@ sudo systemctl restart mopidy.service
 
 And now you should be able to access a Mopidy webpage at `localhost:6680` from the server, or at `192.168.X.X:6680` or a similar LAN address. There should also be a fifo created in `/tmp` with the name `snapfifo-livingroom` if you followed the instructions literally. 
 
- To have Mopidy started as service by default at system startup, run this: 
+To have Mopidy started as service by default at system startup, run this: 
 
-```
+```shell
 sudo systemctl enable mopidy.service
 ```
-
- Otherwise start and stop as needed with either 
+Otherwise start and stop as needed with either 
 
 ```shell
 sudo systemctl start mopidy.service
 ```
 
- or  
+ or
 
 ```shell
 sudo systemctl stop mopidy.service
 ```
 
- For more Mopidy configuration details see <https://docs.mopidy.com/en/latest/config/>. 
+For more Mopidy configuration details see <https://docs.mopidy.com/en/latest/config/>. 
 
 ## 4. Install the Moped web interface to Mopidy
 
- This is for easy web control of what's broadcast by the Mopidy server.  To install it, you probably need the Python package manager `pip`. Make sure you have it on your machine: 
+This is for easy web control of what's broadcast by the Mopidy server.  To install it, you probably need the Python package manager `pip`. Make sure you have it on your machine: 
 
 ```shell
 sudo apt-get install python-pip
 ```
 
- Now install Moped itself. 
+Now install Moped itself. 
 
 ```shell
 sudo pip install Mopidy-Moped
 ```
 
- After a Mopidy restart, you should be able to access the Moped interface at `localhost:6680/moped` from the server and the same port and path with a proper ip from another LAN machine. 
+After a Mopidy restart, you should be able to access the Moped interface at `localhost:6680/moped` from the server and the same port and path with a proper ip from another LAN machine. 
 
- You can find Moped's page at <https://github.com/martijnboland/moped>.  
+You can find Moped's page at <https://github.com/martijnboland/moped>.  
 
 ## 5. Install Snapcast server
 
- Snapcast reads the music from Mopidy using the pipe in `/tmp`. Then it broadcasts it over LAN to Snapcast clients. The service is advertised automatically by Avahi (see step 1). You need to: 
+Snapcast reads the music from Mopidy using the pipe in `/tmp`. Then it broadcasts it over LAN to Snapcast clients. The service is advertised automatically by Avahi (see step 1). You need to: 
 
- a) Download it from <https://github.com/badaix/snapcast/releases/tag/v0.10.0>. Choose a server package with a `.deb` extension and (`amd64`  before it for a standard laptop or PC). If you're using the graphical  interfacal, you can download it and then run it double-clicking on the  downloaded file. Or using the command line, get the file location, and  then do something like: 
+a) Download it from <https://github.com/badaix/snapcast/releases/tag/v0.10.0>. Choose a server package with a `.deb` extension and (`amd64`  before it for a standard laptop or PC). If you're using the graphical  interfacal, you can download it and then run it double-clicking on the  downloaded file. Or using the command line, get the file location, and  then do something like: 
 
-```
-  cd &&
-  wget https://github.com/badaix/snapcast/releases/download/v0.10.0/snapserver_0.10.0_amd64.deb &&
-  sudo dpkg -i snapserver_0.10.0_amd64.deb 
+```shell
+cd &&
+wget https://github.com/badaix/snapcast/releases/download/v0.10.0/snapserver_0.10.0_amd64.deb &&
+sudo dpkg -i snapserver_0.10.0_amd64.deb 
 ```
 
 ## 6. Configure the Snapcast server
 
- The configuration file should at in `/etc/default/snapserver`. The `SNAPSERVER_OPTS`  parameter needs to be set to integrate the Snapcast server with Mopidy.  Either add the following line to the config file, or edit the line  containing the `SNAPSERVER_OPTS` parameter to look like this: 
+The configuration file should at in `/etc/default/snapserver`. The `SNAPSERVER_OPTS`  parameter needs to be set to integrate the Snapcast server with Mopidy.  Either add the following line to the config file, or edit the line  containing the `SNAPSERVER_OPTS` parameter to look like this: 
 
-```
-  SNAPSERVER_OPTS="-d -s pipe:///tmp/snapfifo-livingroom?name=livingroom&sampleformat=48000:16:2&codec=flac"
-```
-
- Now reload the service with 
-
-```
-  sudo systemctl restart snapserver.service
+```shell
+SNAPSERVER_OPTS="-d -s pipe:///tmp/snapfifo-livingroom?name=livingroom&sampleformat=48000:16:2&codec=flac"
 ```
 
- Snapserver runs as a service and by default should be starting by system  bootup. To get or change this behaviour follow the corresponding  instructions described in step 3. 
+Now reload the service with 
+
+```shell
+sudo systemctl restart snapserver.service
+```
+
+Snapserver runs as a service and by default should be starting by system  bootup. To get or change this behaviour follow the corresponding  instructions described in step 3. 
 
 ## 7. Install the YouTube exetension for Mopidy
 
- This extension facilitates restreaming the audio from YouTube videos.  The package is present in Ubuntu repositories. To install it from the  command line, type 
+This extension facilitates restreaming the audio from YouTube videos.  The package is present in Ubuntu repositories. To install it from the  command line, type 
 
-```
-  sudo apt-get install mopidy-youtube 
-```
-
- For playing Youtube GStreamer plugins are needed, in particualar this one: 
-
-```
-  sudo apt-get install gstreamer1.0-plugins-bad
+```shell
+sudo apt-get install mopidy-youtube 
 ```
 
- Restart Mopidy. Now the searchbox on the Moped page should be able to  find YouTube videos. You can also paste the whole YouTube addresses as  they appear in the browser while watching videos. 
+For playing Youtube GStreamer plugins are needed, in particualar this one: 
 
- If resolving of URIs stops working, always try to update the pafy library first: 
-
-```
-  pip install --upgrade pafy
+```shell
+sudo apt-get install gstreamer1.0-plugins-bad
 ```
 
- For YouTube stream reading problems, try installing the Python `youtube-dl` library using pip: 
+Restart Mopidy. Now the searchbox on the Moped page should be able to  find YouTube videos. You can also paste the whole YouTube addresses as  they appear in the browser while watching videos. 
 
+If resolving of URIs stops working, always try to update the pafy library first: 
+
+```shell
+pip install --upgrade pafy
 ```
-  sudo pip install youtube-dl
+
+For YouTube stream reading problems, try installing the Python `youtube-dl` library using pip: 
+
+```shell
+sudo pip install youtube-dl
 ```
 
 ## 8. Bind Mopidy with LAN resources
 
- These instructions are for binding LAN resources accessible through Samba. 
+These instructions are for binding LAN resources accessible through Samba. 
 
 ### a) Create a mount of Samba resources
 
- Scan local services. 
+Scan local services. 
 
-```
-  smbtree -S
-```
-
- Find out the server address. 
-
-```
-  avahi-browse -ar
+```shell
+smbtree -S
 ```
 
- Create a mount point and mount the samba directories. For this the package `cifs-utils` is needed. To set up a mount at system startup, append the following line to `/etc/fstab`: 
+Find out the server address. 
 
-```
-  //192.168.1.32/media/mukke /mnt/music cifs credentials=/root/.smb_music_credentials,uid=root,gid=root,ro 0 0
-```
-
- And create the credentials file in `/root` with the following lines: 
-
-```
-  .smb_music_credentials
-  username=Anonymous
-  password=''
+```shell
+avahi-browse -ar
 ```
 
- To get all `/etc/fstab` entries mounted now, run: 
+Create a mount point and mount the samba directories. For this the package `cifs-utils` is needed. To set up a mount at system startup, append the following line to `/etc/fstab`: 
 
-```
-  sudo mount -a
+```shell
+//192.168.1.32/media/mukke /mnt/music cifs credentials=/root/.smb_music_credentials,uid=root,gid=root,ro 0 0
 ```
 
- More on the `[local]` extension: <https://docs.mopidy.com/en/latest/ext/local/>. 
+And create the credentials file in `/root` with the following lines: 
+
+```shell
+.smb_music_credentials
+username=Anonymous
+password=''
+```
+
+To get all `/etc/fstab` entries mounted now, run: 
+
+```shell
+sudo mount -a
+```
+
+More on the `[local]` extension: <https://docs.mopidy.com/en/latest/ext/local/>. 
 
 ### b) New media need to be scanned and added to the library Mopidy uses
 
  The scan has to be executed with the right configs. If Mopidy runs as a service, check `systemctl` with a running mopidy.service instance to see the right configs. Then perform the following (with the right configs): 
 
+```shell
+sudo mopidy --config /usr/share/mopidy/conf.d:/etc/mopidy/mopidy.conf local scan
 ```
-  sudo mopidy --config /usr/share/mopidy/conf.d:/etc/mopidy/mopidy.conf local scan
-```
 
- The default library is a json file. Another option is a `sqlite` database. 
+The default library is a json file. Another option is a `sqlite` database. 
 
- With a json library, Mopidy service needs a restart to see the rescanned media correctly. 
+With a json library, Mopidy service needs a restart to see the rescanned media correctly. 
 
- Consider adding a `scan` action to `/etc/init.d/mopidy`. 
-
-​                                   
+Consider adding a `scan` action to `/etc/init.d/mopidy`. 
