@@ -1,7 +1,7 @@
-Role Name
-=========
+ansible-role-mopidy
+===================
 
-A brief description of the role goes here.
+Under development - not working - An Ansible role to install and configure a Mopidy based music system
 
 Requirements
 ------------
@@ -11,7 +11,51 @@ Any pre-requisites that may not be covered by Ansible itself or the role should 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+```shell
+# for system service use "mopidyctl", for user service use "mopidy"
+
+mopidy_command: mopidyctl
+
+# Debian/Ubuntu/Raspberry Pi
+
+mopidy_apt_gpg_key_url : https://apt.mopidy.com/mopidy.gpg
+mopidy_apt_sources_list: https://apt.mopidy.com/stretch.list
+
+mopidy_packages :
+  - mopidy
+  - mopidy-docs
+
+# Mopidy configs
+
+mopidy_system_config_overide : /etc/mopidy/mopidy.conf
+
+# file
+
+mopidy_file_overides
+  - media_dirs : /var/lib/mopidy/media
+
+# http
+mopidy_http_overides:
+  - hostname = 0.0.0.0     # for ip6 '::'
+
+# m3u
+mopidy_m3u_overides:
+  - playlists_dir     : /var/lib/mopidy/playlists
+
+# snapcast
+
+mopidy_snapcast_ver: '0.10.0'
+
+mopidy_snapcast_server_config : /etc/default/snapserver
+mopidy-snapcast_client_config : /etc/default/snapclient
+ 
+mopidy_snapcast_server_port  : 1704 # music
+mopidy_snapcast_remote__port : 1705 # remote control
+
+# mpd 
+mopidy_mpd_overides
+  - hostname = 0.0.0.0     # for ip6 '::'
+```
 
 Dependencies
 ------------
