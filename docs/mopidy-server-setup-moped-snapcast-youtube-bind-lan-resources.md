@@ -36,6 +36,7 @@
 
 ### Pulseaudio
 
+* https://freedompenguin.com/articles/how-to/pulseaudio-toilet-full-roses/
 * https://github.com/Malte-D/rpi-mopidy-pulseaudio-server/blob/master/Dockerfile
 
 ### Raspberry Pi
@@ -45,6 +46,15 @@
 ### Snapcast
 
 * https://github.com/badaix/snapcast
+
+### Shoutcast (winamp)
+
+* https://www.linode.com/docs/applications/media-servers/how-to-install-shoutcast-dnas-server-on-linux/
+
+## Spotify
+
+* [https://github.com/mopidy/mopidy-](https://github.com/mopidy/mopidy-spotify)
+* https://www.mopidy.com/authenticate/
 
 ### youtube
 
@@ -86,11 +96,18 @@ apt upgrade
 nano /etc/ssh/sshd_config
 ```
 
+Options, you may need to add more depending on your distribution
+
+```shell
+PermitRootLogin no
+ChallengeResponseAuthentication no
+```
+
 
 
  This HowTo is about setting up the audio server on Ubuntu and  RaspberryPi. The instructions are mainly for Ubuntu and notes for RPi  are added where applicable. 
 
-## 1. Make sure the server runs Avahi
+## 1. Ensure for Avahi
 
  Avahi advertises services over network and Snapcast needs it. Run this as a sudoer. 
 
@@ -98,7 +115,7 @@ nano /etc/ssh/sshd_config
 ps aux | grep avahi | grep -v grep || sudo apt-get install -y avahi-daemon
 ```
 
-## 2. Install Mopidy
+## 2. Ensure for Mopidy
 
  **\*RPi:** Mopidy on RPi needs manual install for the  latest version. Dependencies may also differ (eg. GStreamer 1.0 not  0.10). These should get installed automatically from the new Mopidy  repository added to the local list. Follow these instructions: https://docs.mopidy.com/en/latest/installation/debian/#debian-install.*  
 
@@ -477,7 +494,7 @@ If everything looks good make it start on boot with:
 systemctl enable snapserver.service
 ```
 
-## 7. Configure the snapclient
+## 7. Configure the snapcast client
 
 THIS IS DONE ON A CLIENT, NOT THE SERVER!!!
 
@@ -523,7 +540,7 @@ systemctl restart mopidy.service
 Visit the moped home page again:
 
 ```shell
-systemctl restart mopidy.service
+http://192.168.1.109:6680/moped
 ```
 
 In my case no videos showed up and running
@@ -553,7 +570,131 @@ For YouTube stream reading problems, try installing the Python `youtube-dl` libr
 pip install youtube-dl
 ```
 
-## 8. Bind Mopidy with LAN resources
+## 8. Spotify
+
+Debian/Ubuntu/Raspbian: Install the `mopidy-spotify` package from [apt.mopidy.com](http://apt.mopidy.com/):
+
+To install and receive future updates:
+
+Add the archive’s GPG key:
+
+```shell
+wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add -
+```
+
+Add the apt.mopidy.com jessie.list to your `/etc/apt/sources.d` directory
+
+If you run any newer Debian/Ubuntu ( Jessie / Ubuntu 14.04 LTS or greater)
+
+```shell
+sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
+```
+
+Update and Install pyspotify and it's dependencies:
+
+```shell
+sudo apt-get update
+# sudo apt-get install python-spotify  # failed so...
+```
+
+because the above `sudo apt-get install python-spotify` resulted in an install that did not work and was not picked up by `mopidycrl config` I did the following:
+
+Hacky install:
+
+```shell
+apt-get remove python-spotify
+```
+
+then:
+
+```shell
+apt-get install libspotify-dev # otherwise `pip install Mopidy-Spotify` fails
+```
+
+Then:
+
+```shell
+pip install Mopidy-Spotify
+```
+
+Confirm all is well with:
+
+```shell
+mopidyctl config
+```
+
+Output example:
+
+```shell
+[spotify]
+enabled = false  ; Extension disabled due to config errors.
+username = myuser
+password = ********
+client_id =   ; Must be set.
+client_secret =   ; Must be set.
+bitrate = 320
+volume_normalization = true
+private_session = false
+timeout = 10
+allow_cache = true
+allow_network = true
+allow_playlists = true
+search_album_count = 20
+search_artist_count = 10
+search_track_count = 50
+toplist_countries = 
+```
+
+
+
+Reload mopidy
+
+```shell
+systemctl restart mopidy.service
+```
+
+Add your spotify credentials to `/etc/mopidy/mopidy.conf`:
+
+```shell
+nano /etc/mopidy/mopidy.conf
+```
+
+Entry example:
+
+```shell
+[spotify]
+enable = true
+username = alice
+password = secret
+client_id = ... client_id value you got from mopidy.com ...
+client_secret = ... client_secret value you got from mopidy.com ...
+bitrate = 320
+```
+
+Other Options:
+
+- `spotify/enabled`: If the Spotify extension should be enabled or not. Defaults to `true`.
+- `spotify/username`: Your Spotify Premium username. You *must* provide this.
+- `spotify/password`: Your Spotify Premium password. You *must* provide this.
+- `spotify/client_id`: Your Spotify application client id. You *must* provide this.
+- `spotify/client_secret`: Your Spotify application secret key. You *must* provide this.
+- `spotify/bitrate`: Audio bitrate in kbps. `96`, `160`, or `320`. Defaults to `160`.
+- `spotify/volume_normalization`: Whether volume normalization is active or not. Defaults to `true`.
+- `spotify/timeout`: Seconds before giving up waiting for search results, etc. Defaults to `10`.
+- `spotify/allow_cache`: Whether to allow caching. The cache is stored in a "spotify" directory within Mopidy's `core/cache_dir`. Defaults to `true`.
+- `spotify/allow_network`: Whether to allow network access or not. Defaults to `true`.
+- `spotify/allow_playlists`: Whether or not playlists should be exposed. Defaults to `true`.
+- `spotify/search_album_count`: Maximum number of albums returned in search results. Number between 0 and 50. Defaults to 20.
+- `spotify/search_artist_count`: Maximum number of artists returned in search results. Number between 0 and 50. Defaults to 10.
+- `spotify/search_track_count`: Maximum number of tracks returned in search results. Number between 0 and 50. Defaults to 50.
+- `spotify/toplist_countries`: Comma separated list of two letter ISO country codes to get toplists for. Defaults to blank, which is interpreted as all countries that Spotify is available in.
+- `spotify/private_session`: Whether to use a private Spotify session. Turn on private session to disable sharing of played tracks with friends through the Spotify activity feed, Last.fm scrobbling, and Facebook. This only affects social sharing done by Spotify, not by other Mopidy extensions. Defaults to `false`.
+
+### Resources
+
+* https://github.com/mopidy/mopidy-spotify
+
+## 9. Bind Mopidy with LAN resources
 
 These instructions are for binding LAN resources accessible through Samba. 
 
