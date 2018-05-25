@@ -153,6 +153,7 @@ nano /etc/mopidy/mopidy.conf
 ```shell
 [audio]
 output = audioresample ! audioconvert ! audio/x-raw,rate=48000,channels=2,format=S16LE ! wavenc ! filesink location=/tmp/snapfifo-livingroom
+
 ```
 
 The output config details have to agree with Snapcast server's configuration. 
